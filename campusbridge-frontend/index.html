@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CampusBridge</title>
+</head>
+<body>
+  <h1>CampusBridge</h1>
+
+  <!-- Add College Form -->
+  <h2>Add College</h2>
+  <form id="college-form">
+    <input type="text" id="college-name" placeholder="College Name" required />
+    <input type="text" id="college-location" placeholder="Location" />
+    <button type="submit">Add College</button>
+  </form>
+
+  <!-- Add Student Form -->
+  <h2>Add Student</h2>
+  <form id="student-form">
+    <input type="text" id="student-name" placeholder="Student Name" required />
+    <input type="email" id="student-email" placeholder="Email" required />
+    <select id="college-select" required>
+      <option value="">Select College</option>
+    </select>
+    <button type="submit">Add Student</button>
+  </form>
+
+  <!-- List of Students -->
+  <h2>All Students</h2>
+  <table id="students-table" border="1" cellspacing="0" cellpadding="10">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Email</th>
+        <th>College</th>
+      </tr>
+    </thead>
+    <tbody id="students-body">
+      <!-- Students will appear here -->
+    </tbody>
+  </table>
+
+  <script>
+    const backendUrl = 'http://localhost:5000/api';
+
+    // Add College
+    document.getElementById('college-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const name = document.getElementById('college-name').value;
+      const location = document.getElementById('college-location').value;
+
+      const res = await fetch(`${backendUrl}/colleges/add`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, location }),
+      });
+
+      const data = await res.json();
+      alert(data.message);
+      fetchColleges();
+    });
+
+    // Fetch Colleges
+    async function fetchColleges() {
+      const res = await fetch(`${backendUrl}/colleges`);
+      const colleges = await res.json();
+
+      const select = document.getElementById('college-select');
+      select.innerHTML = '<option value="">Select College</option>';
+
+      colleges.forEach(college => {
+        const option = document.createElement('option');
+        option.value = college._id;
+        option.textContent = college.name;
+        select.appendChild(option);
+      });
+    }
+
+    // Add Student
+    document.getElementById('student-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const name = document.getElementById('student-name').value;
+      const email = document.getElementById('student-email').value;
+      const collegeId = document.getElementById('college-select').value;
+
+      const res = await fetch(`${backendUrl}/students/add`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, college: collegeId }),
+      });
+
+      const data = await res.json();
+      alert(data.message);
+      fetchStudents(); // Refresh the list
+    });
+
+    // Fetch and display students
+    async function fetchStudents() {
+      try {
+        const res = await fetch(`${backendUrl}/students`);
+        const students = await res.json();
+
+        const tbody = document.getElementById('students-body');
+        tbody.innerHTML = '';
+
+        students.forEach(student => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${student.name}</td>
+            <td>${student.email}</td>
+            <td>${student.college?.name || 'N/A'}</td>
+          `;
+          tbody.appendChild(row);
+        });
+      } catch (err) {
+        console.error('Error fetching students:', err);
+      }
+    }
+
+    // Load on page start
+    fetchColleges();
+    fetchStudents();
+  </script>
+</body>
+</html>
